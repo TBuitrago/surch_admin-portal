@@ -65,6 +65,53 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+// Diagnostic endpoint to check frontend configuration
+app.get('/api/debug/frontend', (req, res) => {
+  const possiblePaths = [
+    path.join(__dirname, '..', 'frontend', 'dist'),
+    path.join(process.cwd(), 'frontend', 'dist'),
+    '/public_html/.builds/source/repository/frontend/dist',
+    path.join(process.cwd(), '..', 'frontend', 'dist'),
+    path.join(process.cwd(), '..', '..', 'frontend', 'dist'),
+    process.env.FRONTEND_DIST_PATH || null,
+  ].filter(Boolean);
+
+  const results = possiblePaths.map(testPath => {
+    const testIndex = path.join(testPath, 'index.html');
+    const exists = fs.existsSync(testIndex);
+    let files = [];
+    let error = null;
+    
+    if (fs.existsSync(testPath)) {
+      try {
+        files = fs.readdirSync(testPath);
+      } catch (err) {
+        error = err.message;
+      }
+    }
+    
+    return {
+      path: testPath,
+      indexExists: exists,
+      directoryExists: fs.existsSync(testPath),
+      files: files.slice(0, 10), // First 10 files
+      error: error
+    };
+  });
+
+  res.json({
+    currentDirectory: process.cwd(),
+    __dirname: __dirname,
+    frontendPath: frontendPath,
+    frontendIndex: frontendIndex,
+    hasFrontendBuild: hasFrontendBuild,
+    possiblePaths: results,
+    env: {
+      FRONTEND_DIST_PATH: process.env.FRONTEND_DIST_PATH || 'not set'
+    }
+  });
+});
+
 // Clients
 app.get('/api/clients', async (req, res) => {
   const { data, error } = await supabase
@@ -594,6 +641,45 @@ if (hasFrontendBuild && frontendPath) {
   console.log('⚠️  Frontend dist directory NOT found in any of the tested paths');
 }
 console.log('=============================');
+
+// Diagnostic endpoint to check frontend configuration
+app.get('/api/debug/frontend', (req, res) => {
+  const testResults = possiblePaths.map(testPath => {
+    const testIndex = path.join(testPath, 'index.html');
+    const dirExists = fs.existsSync(testPath);
+    const indexExists = fs.existsSync(testIndex);
+    let files = [];
+    let error = null;
+    
+    if (dirExists) {
+      try {
+        files = fs.readdirSync(testPath);
+      } catch (err) {
+        error = err.message;
+      }
+    }
+    
+    return {
+      path: testPath,
+      directoryExists: dirExists,
+      indexExists: indexExists,
+      files: files.slice(0, 10), // First 10 files
+      error: error
+    };
+  });
+
+  res.json({
+    currentDirectory: process.cwd(),
+    __dirname: __dirname,
+    frontendPath: frontendPath,
+    frontendIndex: frontendIndex,
+    hasFrontendBuild: hasFrontendBuild,
+    possiblePaths: testResults,
+    env: {
+      FRONTEND_DIST_PATH: process.env.FRONTEND_DIST_PATH || 'not set'
+    }
+  });
+});
 
 if (hasFrontendBuild) {
   // Serve static files (CSS, JS, images, etc.)
