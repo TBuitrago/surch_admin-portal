@@ -62,7 +62,7 @@ app.use(express.json({ limit: '2mb' }));
 
 // Health check with optional debug info
 app.get('/api/health', (req, res) => {
-  const debug = req.query.debug === 'true';
+  const debug = req.query.debug === 'true' || req.query.debug === '1';
   
   if (!debug) {
     return res.json({ status: 'ok' });
@@ -696,19 +696,29 @@ app.get('/api/debug/frontend', (req, res) => {
 
 if (hasFrontendBuild) {
   // Serve static files (CSS, JS, images, etc.)
+  // This must be before the catch-all route
   app.use(express.static(frontendPath, {
     maxAge: '1d',
-    etag: true
+    etag: true,
+    index: false // Don't serve index.html for directories
   }));
 
   // Serve frontend for all non-API routes (SPA fallback)
+  // This route should only handle routes that don't match static files
   app.get('*', (req, res, next) => {
     // Skip API routes
     if (req.path.startsWith('/api')) {
       return next();
     }
     
-    // Serve index.html for all other routes (SPA routing)
+    // Skip if it's a request for a static file (has extension)
+    // Static files should have been handled by express.static above
+    const hasExtension = /\.\w+$/.test(req.path);
+    if (hasExtension) {
+      return next(); // Let Express handle 404 for missing static files
+    }
+    
+    // Serve index.html for SPA routes (no extension = SPA route)
     res.sendFile(path.resolve(frontendIndex), (err) => {
       if (err) {
         console.error('Error serving frontend:', err);
