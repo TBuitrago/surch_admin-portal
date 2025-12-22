@@ -6,9 +6,9 @@ node_modules/
 # Testing
 /coverage
 
-# Production
+# Production builds (mantener dist para Hostinger)
 /build
-/dist
+# /dist - comentado porque Hostinger necesita el build del frontend
 
 # Misc
 .DS_Store
@@ -35,6 +35,10 @@ lerna-debug.log*
 # OS
 Thumbs.db
 
-# PM2
+# PM2 (ya no se usa)
 logs/
 *.log
+
+# Archivos temporales
+*.tmp
+*.temp

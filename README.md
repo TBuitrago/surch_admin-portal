@@ -186,3 +186,16 @@ The portal expects the following Supabase tables (already created):
 - `emails` - Email send logs
 
 See the requirements document for full schema details.
+
+## Deployment
+
+### Hostinger
+
+Para desplegar en Hostinger usando "App web de Node.js", consulta el archivo [HOSTINGER.md](./HOSTINGER.md) para instrucciones detalladas.
+
+**Resumen rápido:**
+1. Compila el frontend: `cd frontend && npm install && npm run build`
+2. Sube el proyecto completo a Hostinger
+3. Configura las variables de entorno en el panel de Hostinger
+4. Configura el Startup File como `backend/server.js`
+5. El backend servirá automáticamente el frontend compilado desde `frontend/dist/`
