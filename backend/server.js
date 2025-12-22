@@ -60,12 +60,61 @@ app.use(
 );
 app.use(express.json({ limit: '2mb' }));
 
-// Health check
+// Health check with optional debug info
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok' });
+  const debug = req.query.debug === 'true';
+  
+  if (!debug) {
+    return res.json({ status: 'ok' });
+  }
+  
+  // Return debug information
+  const possiblePaths = [
+    path.join(__dirname, '..', 'frontend', 'dist'),
+    path.join(process.cwd(), 'frontend', 'dist'),
+    '/public_html/.builds/source/repository/frontend/dist',
+    path.join(process.cwd(), '..', 'frontend', 'dist'),
+    path.join(process.cwd(), '..', '..', 'frontend', 'dist'),
+    process.env.FRONTEND_DIST_PATH || null,
+  ].filter(Boolean);
+  
+  const testResults = possiblePaths.map(testPath => {
+    const testIndex = path.join(testPath, 'index.html');
+    const dirExists = fs.existsSync(testPath);
+    const indexExists = fs.existsSync(testIndex);
+    let files = [];
+    let error = null;
+    
+    if (dirExists) {
+      try {
+        files = fs.readdirSync(testPath);
+      } catch (err) {
+        error = err.message;
+      }
+    }
+    
+    return {
+      path: testPath,
+      directoryExists: dirExists,
+      indexExists: indexExists,
+      files: files.slice(0, 10),
+      error: error
+    };
+  });
+  
+  res.json({
+    status: 'ok',
+    debug: true,
+    currentDirectory: process.cwd(),
+    __dirname: __dirname,
+    possiblePaths: testResults,
+    env: {
+      FRONTEND_DIST_PATH: process.env.FRONTEND_DIST_PATH || 'not set'
+    }
+  });
 });
 
-// Simple debug endpoint to test if server is working
+// Debug endpoints (must be defined early, before any catch-all routes)
 app.get('/api/debug/test', (req, res) => {
   res.json({ 
     message: 'Debug endpoint is working',
