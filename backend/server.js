@@ -420,7 +420,8 @@ app.get('/api/clients/:id/delivery-settings', async (req, res) => {
   const { id } = req.params;
 
   const { data, error } = await supabase
-    .from('delivery_settings')
+    // Tabla real en Supabase es client_delivery_settings
+    .from('client_delivery_settings')
     .select('*')
     .eq('client_id', id)
     .single();
@@ -458,7 +459,8 @@ app.put('/api/clients/:id/delivery-settings', async (req, res) => {
   };
 
   const { data, error } = await supabase
-    .from('delivery_settings')
+    // Tabla real en Supabase es client_delivery_settings
+    .from('client_delivery_settings')
     .upsert(payload, { onConflict: 'client_id' })
     .select()
     .single();
@@ -479,8 +481,8 @@ app.get('/api/clients/:id/emails', async (req, res) => {
     .from('emails')
     .select('*')
     .eq('client_id', id)
-    .order('sent_at', { ascending: false })
-    .order('created_at', { ascending: false });
+    // Ordenar por fecha de envío; evitamos usar created_at ya que la columna no existe en tu esquema
+    .order('sent_at', { ascending: false, nulls: 'last' });
 
   if (error) {
     console.error('Error fetching emails', error);
