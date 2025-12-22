@@ -544,23 +544,96 @@ app.post('/api/webhooks/emails', async (req, res) => {
 });
 
 // Serve static files from frontend/dist when present (for Hostinger Node app)
-const frontendPath = path.join(__dirname, '..', 'frontend', 'dist');
-const frontendIndex = path.join(frontendPath, 'index.html');
-const hasFrontendBuild = fs.existsSync(frontendIndex);
+// Try multiple possible paths for the frontend build
+const possiblePaths = [
+  // Standard structure (local development)
+  path.join(__dirname, '..', 'frontend', 'dist'),
+  // Hostinger structure
+  path.join(process.cwd(), 'frontend', 'dist'),
+  // Absolute path from repository root (Hostinger)
+  '/public_html/.builds/source/repository/frontend/dist',
+  // Alternative Hostinger paths
+  path.join(process.cwd(), '..', 'frontend', 'dist'),
+  path.join(process.cwd(), '..', '..', 'frontend', 'dist'),
+  // Custom path from environment variable
+  process.env.FRONTEND_DIST_PATH || null,
+].filter(Boolean);
+
+let frontendPath = null;
+let frontendIndex = null;
+let hasFrontendBuild = false;
+
+// Try to find the frontend build in any of the possible paths
+for (const testPath of possiblePaths) {
+  const testIndex = path.join(testPath, 'index.html');
+  if (fs.existsSync(testIndex)) {
+    frontendPath = testPath;
+    frontendIndex = testIndex;
+    hasFrontendBuild = true;
+    break;
+  }
+}
+
+// Log for debugging
+console.log('=== Frontend Configuration ===');
+console.log('Current directory:', process.cwd());
+console.log('__dirname:', __dirname);
+console.log('Possible paths tested:', possiblePaths);
+console.log('Frontend path found:', frontendPath);
+console.log('Frontend index:', frontendIndex);
+console.log('Frontend build exists:', hasFrontendBuild);
+if (hasFrontendBuild && frontendPath) {
+  console.log('Frontend dist directory exists');
+  try {
+    const files = fs.readdirSync(frontendPath);
+    console.log('Files in dist:', files);
+  } catch (err) {
+    console.error('Error reading dist directory:', err.message);
+  }
+} else {
+  console.log('⚠️  Frontend dist directory NOT found in any of the tested paths');
+}
+console.log('=============================');
 
 if (hasFrontendBuild) {
-  app.use(express.static(frontendPath));
+  // Serve static files (CSS, JS, images, etc.)
+  app.use(express.static(frontendPath, {
+    maxAge: '1d',
+    etag: true
+  }));
 
-  // Serve frontend for all non-API routes
+  // Serve frontend for all non-API routes (SPA fallback)
   app.get('*', (req, res, next) => {
-    if (!req.path.startsWith('/api')) {
-      res.sendFile(frontendIndex);
-    } else {
-      next();
+    // Skip API routes
+    if (req.path.startsWith('/api')) {
+      return next();
     }
+    
+    // Serve index.html for all other routes (SPA routing)
+    res.sendFile(path.resolve(frontendIndex), (err) => {
+      if (err) {
+        console.error('Error serving frontend:', err);
+        res.status(500).send('Error loading application');
+      }
+    });
   });
 } else {
-  console.warn('frontend/dist not found; SPA will not be served by backend');
+  console.error('⚠️  WARNING: frontend/dist not found at:', frontendPath);
+  console.error('   Current working directory:', process.cwd());
+  console.error('   __dirname:', __dirname);
+  console.error('   Make sure to build the frontend before deploying!');
+  
+  // Provide a helpful error message
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    res.status(404).json({
+      error: 'Frontend not found',
+      message: 'The frontend build is missing. Please build the frontend with: cd frontend && npm run build',
+      path: frontendPath
+    });
+  });
 }
 
 app.listen(PORT, () => {
