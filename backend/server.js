@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 dotenv.config();
 
@@ -542,19 +543,24 @@ app.post('/api/webhooks/emails', async (req, res) => {
   return res.status(201).json(data);
 });
 
-// Serve static files from frontend/dist in production
-if (process.env.NODE_ENV === 'production') {
-  const frontendPath = path.join(__dirname, '..', 'frontend', 'dist');
+// Serve static files from frontend/dist when present (for Hostinger Node app)
+const frontendPath = path.join(__dirname, '..', 'frontend', 'dist');
+const frontendIndex = path.join(frontendPath, 'index.html');
+const hasFrontendBuild = fs.existsSync(frontendIndex);
+
+if (hasFrontendBuild) {
   app.use(express.static(frontendPath));
 
   // Serve frontend for all non-API routes
   app.get('*', (req, res, next) => {
     if (!req.path.startsWith('/api')) {
-      res.sendFile(path.join(frontendPath, 'index.html'));
+      res.sendFile(frontendIndex);
     } else {
       next();
     }
   });
+} else {
+  console.warn('frontend/dist not found; SPA will not be served by backend');
 }
 
 app.listen(PORT, () => {
