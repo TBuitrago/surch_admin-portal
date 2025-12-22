@@ -607,14 +607,15 @@ app.post('/api/webhooks/emails', async (req, res) => {
 const possiblePaths = [
   // Standard structure (local development)
   path.join(__dirname, '..', 'frontend', 'dist'),
-  // Hostinger structure
+  // Hostinger structure - based on .builds directory
   path.join(process.cwd(), 'frontend', 'dist'),
-  // Absolute path from repository root (Hostinger)
-  '/public_html/.builds/source/repository/frontend/dist',
-  // Alternative Hostinger paths
   path.join(process.cwd(), '..', 'frontend', 'dist'),
   path.join(process.cwd(), '..', '..', 'frontend', 'dist'),
-  // Custom path from environment variable
+  // Absolute paths for Hostinger
+  '/public_html/.builds/source/repository/frontend/dist',
+  path.join(process.cwd(), '.builds', 'source', 'repository', 'frontend', 'dist'),
+  path.join(process.cwd(), '..', '.builds', 'source', 'repository', 'frontend', 'dist'),
+  // Custom path from environment variable (highest priority)
   process.env.FRONTEND_DIST_PATH || null,
 ].filter(Boolean);
 
@@ -734,6 +735,13 @@ if (hasFrontendBuild) {
   });
 }
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// Start server with error handling
+try {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Health check: http://localhost:${PORT}/api/health`);
+  });
+} catch (error) {
+  console.error('Failed to start server:', error);
+  process.exit(1);
+}
