@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  app:
+    build: .
+    container_name: surch-admin
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      # Ajusta con tus valores reales o usa env_file si prefieres
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+    # Si prefieres cargar desde un archivo, descomenta:
+    # env_file:
+    #   - backend/.env

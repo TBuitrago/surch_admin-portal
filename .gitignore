@@ -8,7 +8,8 @@ node_modules/
 
 # Production builds (mantener dist para Hostinger)
 /build
-# /dist - comentado porque Hostinger necesita el build del frontend
+# No ignorar el build del frontend (se necesita para Hostinger y Docker)
+!/frontend/dist/
 
 # Misc
 .DS_Store
