@@ -1,18 +1,12 @@
-version: "3.8"
-
 services:
-  app:
+  surch-app: # Este es el nombre que usarás en el panel de Nginx Proxy Manager
     build: .
-    container_name: surch-admin
-    ports:
-      - "3000:3000"
+    restart: always
     environment:
-      NODE_ENV: production
-      PORT: 3000
-      # Ajusta con tus valores reales o usa env_file si prefieres
-      SUPABASE_URL: ${SUPABASE_URL}
-      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
-    # Si prefieres cargar desde un archivo, descomenta:
-    # env_file:
-    #   - backend/.env
+      - NODE_ENV=production
+    networks:
+      - n8n-docker_default
+
+networks:
+  n8n-docker_default:
+    external: true
