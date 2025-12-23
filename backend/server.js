@@ -28,7 +28,12 @@ const supabase = createClient(
 );
 
 // Helpers
-const frontendOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173')
+// CORS origins: read from CORS_ORIGIN (comma-separated), fallback to FRONTEND_URL, luego localhost
+const frontendOrigins = (
+  process.env.CORS_ORIGIN ||
+  process.env.FRONTEND_URL ||
+  'http://localhost:5173,http://localhost:3000,http://localhost:3001'
+)
   .split(',')
   .map((v) => v.trim())
   .filter(Boolean);
@@ -49,6 +54,7 @@ function safeJsonParse(value) {
 app.use(
   cors({
     origin: (origin, callback) => {
+      // Permitir requests sin origin (curl, health checks) y validar lista blanca
       if (!origin || frontendOrigins.includes(origin)) {
         callback(null, true);
       } else {
