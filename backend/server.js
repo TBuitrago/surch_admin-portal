@@ -28,8 +28,8 @@ const supabase = createClient(
 );
 
 // Helpers
-// CORS origins: read from CORS_ORIGIN (comma-separated), fallback to FRONTEND_URL, luego localhost
-const frontendOrigins = (
+// CORS origins: CORS_ORIGIN (comma-separated) > FRONTEND_URL > localhost defaults
+const rawOrigins = (
   process.env.CORS_ORIGIN ||
   process.env.FRONTEND_URL ||
   'http://localhost:5173,http://localhost:3000,http://localhost:3001'
@@ -37,6 +37,17 @@ const frontendOrigins = (
   .split(',')
   .map((v) => v.trim())
   .filter(Boolean);
+
+const normalizeOrigin = (value) => {
+  if (!value) return '';
+  try {
+    return value.toLowerCase().replace(/\/+$/, ''); // strip trailing slash
+  } catch {
+    return value;
+  }
+};
+
+const frontendOrigins = rawOrigins.map(normalizeOrigin);
 
 function handleError(res, status, message, details) {
   return res.status(status).json({ error: message, details });
@@ -55,7 +66,8 @@ app.use(
   cors({
     origin: (origin, callback) => {
       // Permitir requests sin origin (curl, health checks) y validar lista blanca
-      if (!origin || frontendOrigins.includes(origin)) {
+      const normalizedOrigin = normalizeOrigin(origin);
+      if (!origin || frontendOrigins.includes(normalizedOrigin)) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));
