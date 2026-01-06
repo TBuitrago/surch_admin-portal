@@ -201,11 +201,23 @@ app.get('/api/clients/:id', async (req, res) => {
 
 app.put('/api/clients/:id', async (req, res) => {
   const { id } = req.params;
-  const { status, n8n_webhook_url } = req.body || {};
+  const { status, n8n_webhook_url, competitor_instagram_urls, competitor_tiktok_urls } = req.body || {};
 
   const updates = {};
   if (status) updates.status = status;
   updates.n8n_webhook_url = n8n_webhook_url ?? null;
+  
+  // Handle competitor URLs arrays
+  if (competitor_instagram_urls !== undefined) {
+    updates.competitor_instagram_urls = Array.isArray(competitor_instagram_urls) 
+      ? competitor_instagram_urls 
+      : null;
+  }
+  if (competitor_tiktok_urls !== undefined) {
+    updates.competitor_tiktok_urls = Array.isArray(competitor_tiktok_urls) 
+      ? competitor_tiktok_urls 
+      : null;
+  }
 
   const { data, error } = await supabase
     .from('clients')

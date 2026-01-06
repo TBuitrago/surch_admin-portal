@@ -8,6 +8,7 @@ import IntelligenceTab from '../components/ClientDetail/IntelligenceTab';
 import ContentIdeasTab from '../components/ClientDetail/ContentIdeasTab';
 import EmailsTab from '../components/ClientDetail/EmailsTab';
 import DeliverySettings from '../components/ClientDetail/DeliverySettings';
+import CompetitorUrls from '../components/ClientDetail/CompetitorUrls';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 
 export default function ClientDetail() {
@@ -390,6 +391,7 @@ export default function ClientDetail() {
       <div>
         {activeTab === 'overview' && (
           <div className="space-y-6">
+            <CompetitorUrls clientId={id} />
             <DeliverySettings clientId={id} />
           </div>
         )}

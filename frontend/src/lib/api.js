@@ -32,6 +32,10 @@ export const api = {
     method: 'PUT',
     body: JSON.stringify(data),
   }),
+  updateClientCompetitorUrls: (id, data) => request(`/api/clients/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }),
   deleteClient: (id) => request(`/api/clients/${id}`, {
     method: 'DELETE',
   }),
