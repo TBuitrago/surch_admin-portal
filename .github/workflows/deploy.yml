@@ -1,0 +1,34 @@
+name: Deploy to Hostinger VPS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Permite ejecutar manualmente desde GitHub
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          script: |
+            cd ~/surch_admin-portal
+            echo "📦 Pulling latest changes from main branch..."
+            git pull origin main
+            echo "🐳 Building and starting Docker containers..."
+            docker compose up -d --build
+            echo "✅ Deployment completed successfully!"
+            echo "📊 Container status:"
+            docker compose ps
+
